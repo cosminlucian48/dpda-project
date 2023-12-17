@@ -176,7 +176,7 @@ public class NodeInstance {
           message = "";
 
           for (Map.Entry<String, Long> entry : nodeMap.entrySet()){
-            message = message + entry.getKey().split(" ")[0] + " - "+ entry.getKey().split(" ")[1] +"; last heartbeat: "+ entry.getValue() + "; node services:" + "[" + String.join(" ", Utils.getMethodsForNodeType(entry.getKey().split(" ")[1])) + "] |";
+            message = message + "PORT: " + entry.getKey().split(" ")[0] + "; Node type: "+ entry.getKey().split(" ")[1] +"; last heartbeat: "+ entry.getValue() + "; node services:" + "[" + String.join(" ", Utils.getMethodsForNodeType(entry.getKey().split(" ")[1])) + "] |";
           }
           break;
         case "service":
