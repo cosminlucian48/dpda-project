@@ -37,7 +37,7 @@ public class NodeInstance {
     this._nodeType = nodeType;
   }
 
-  public void receive(MulticastSocket multicastSocket) {
+  private void receive(MulticastSocket multicastSocket) {
     try {
       byte[] receiveData = new byte[1024];
       DatagramPacket receivePacket = new DatagramPacket(
@@ -159,7 +159,7 @@ public class NodeInstance {
     }
   }
 
-  public void handleClient(Socket clientSocket) {
+  private void handleClient(Socket clientSocket) {
     try {
       BufferedReader in = new BufferedReader(
         new InputStreamReader(clientSocket.getInputStream())
@@ -167,26 +167,18 @@ public class NodeInstance {
       PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
       // Read the message from the client
-      String[] clientMessage = in.readLine().split(" ");
-      System.out.println("Received from client: " + clientMessage);
+      String rawMessage = in.readLine();
+      String[] clientMessage = rawMessage.split(" ");
+      System.out.println("Received from client: " + rawMessage);
 
       String message = "";
       switch (clientMessage[0]) {
         case "topology":
-          message = "";
-
-          for (Map.Entry<String, Long> entry : nodeMap.entrySet()){
-            message = message + "PORT: " + entry.getKey().split(" ")[0] + "; Node type: "+ entry.getKey().split(" ")[1] +"; last heartbeat: "+ entry.getValue() + "; node services:" + "[" + String.join(" ", Utils.getMethodsForNodeType(entry.getKey().split(" ")[1])) + "] |";
-          }
+          message = handleTopologyRequest();
           break;
         case "service":
-            String[] methods = Utils.getMethodsForNodeType(_nodeType.toString());
-            if(Arrays.asList(methods).contains(clientMessage[1])){
-                message =  Utils.computeMethod(clientMessage[1]);
-            }else{
-                message = String.format("The desired service [%s] is not on the node services list.", clientMessage[1]);
-            }
-            break;
+          message = handleServiceRequest(clientMessage);
+          break;
         default:
           break;
       }
@@ -194,9 +186,29 @@ public class NodeInstance {
       out.println(message);
       out.close();
       in.close();
-      System.out.println(String.format("Sent to client %s.", message));
+      System.out.println(String.format("Sent to client: %s.\n", message));
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
+
+  private String handleTopologyRequest(){
+    String message = "";
+    for (Map.Entry<String, Long> entry : nodeMap.entrySet()){
+      message = message + "PORT: " + entry.getKey().split(" ")[0] + "; Node type: "+ entry.getKey().split(" ")[1] +"; last heartbeat: "+ entry.getValue() + "; " + Utils.getMethodsForNodeType(entry.getKey().split(" ")[1]) + "|";
+    }
+    return message;
+  }
+
+  private String handleServiceRequest(String[] clientMessage){
+    String message = "";
+    String services = Utils.getMethodsForNodeType(_nodeType.toString());
+    if(clientMessage.length >1 && services.contains(clientMessage[1])){
+      message =  Utils.computeMethod(clientMessage);
+    }else{
+      message = String.format("The desired service [%s] is not on the node services list.", clientMessage[1]);
+    }
+    return message;
+  }
+
 }

@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class Client {
     private static final String DEFAULT_NODE_HOST = "localhost";
@@ -25,7 +26,7 @@ public class Client {
         System.out.println("\nChoose an option:");
         System.out.println("Note: By default, if port 12345 is empty, that will be the first port a node will try to use.");
         System.out.println("[topology <NODE_PORT>]. Show topology from node perspective.");
-        System.out.println("[service <NODE_PORT> <SERVICE>]. Run service on node.");
+        System.out.println("[service <NODE_PORT> <SERVICE> <VERSION>]. Run service on node.");
         System.out.println("[exit]. Exit\n");
         System.out.print(">>");
     }
@@ -45,9 +46,11 @@ public class Client {
                 handleTopologyRequest(nodePort, userInput);
                 break;
             case "service":
-                if (choice.length > 2) {
+                if (choice.length > 3) {
                     String service = choice[2];
-                    handleServiceRequest(nodePort, service, userInput);
+                    String version = choice[3];
+                    String[] data = Arrays.copyOfRange(choice, 2, choice.length);
+                    handleServiceRequest(nodePort, data, userInput);
                 } else {
                     System.out.println("Too few parameters were given...");
                 }
@@ -81,12 +84,12 @@ public class Client {
         }
     }
 
-    private static void handleServiceRequest(int nodePort, String service, BufferedReader userInput) throws IOException {
+    private static void handleServiceRequest(int nodePort, String[] data, BufferedReader userInput) throws IOException {
         try (Socket socket = new Socket(DEFAULT_NODE_HOST, nodePort);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-            String message = "service " + service;
+            String message = String.format("service %s", String.join(" ", data));
             out.println(message);
             System.out.println("Sent to node: " + message);
 
